@@ -4,6 +4,5 @@ echo "Setting up recruiter-reach..."
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
-playwright install chromium
 cp .env.example .env
 echo "Done. Edit .env with your credentials then run ./start.sh"
