@@ -40,9 +40,13 @@ document.getElementById("reach-btn").addEventListener("click", () => {
     if (res && res.success && res.data && res.data.success) {
       result.textContent = `Sent to ${res.data.email_sent_to}`;
       btn.textContent = "Sent!";
+    } else if (res?.data?.error) {
+      error.textContent = res.data.error;
+      btn.textContent = "No email found";
     } else {
-      error.textContent = res?.data?.error || "Backend not running — start with ./start.sh";
+      error.textContent = "Backend not running — start with: python3 -m backend.server";
       btn.disabled = false;
+      btn.textContent = "Send Outreach";
     }
   });
 });

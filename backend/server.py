@@ -42,10 +42,18 @@ def reach():
             verified_email = find_best(candidates)
 
     if not verified_email:
-        verified_email = (
-            find_best([f"recruiting@{domain}", f"careers@{domain}", f"talent@{domain}"])
-            or f"recruiting@{domain}"
-        )
+        verified_email = find_best([f"recruiting@{domain}", f"careers@{domain}", f"talent@{domain}"])
+
+    log_job(company, role, url, verified_email)
+
+    if not verified_email:
+        return jsonify({
+            "success": False,
+            "email_sent_to": None,
+            "recruiter_name": name,
+            "candidates_tried": len(candidates),
+            "error": "No verified email found — job logged, no email sent.",
+        })
 
     email_content = format_email(
         recruiter_name=name,
@@ -58,7 +66,6 @@ def reach():
     )
 
     sent = send_email(verified_email, email_content["subject"], email_content["body"])
-    log_job(company, role, url, verified_email)
 
     return jsonify({
         "success": sent,
