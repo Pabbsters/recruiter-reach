@@ -18,11 +18,19 @@
     #reach-btn:disabled { background: #93c5fd; cursor: not-allowed; }
     #result { font-size: 12px; margin-top: 10px; color: #16a34a; line-height: 1.4; }
     #error  { font-size: 12px; margin-top: 10px; color: #dc2626; line-height: 1.4; }
+    .field { margin-bottom: 8px; }
+    .field label { font-size: 11px; color: #888; display: block; margin-bottom: 2px; }
+    .field input {
+      width: 100%; padding: 6px 8px; font-size: 12px;
+      border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
   <h2>recruiter-reach</h2>
   <div id="status">Detecting job info...</div>
+  <div class="field"><label>Company</label><input id="company-input" placeholder="e.g. Nasdaq" /></div>
+  <div class="field"><label>Role</label><input id="role-input" placeholder="e.g. Data Science Intern" /></div>
   <button id="reach-btn" disabled>Send Outreach</button>
   <div id="result"></div>
   <div id="error"></div>

@@ -3,18 +3,14 @@ let jobInfo = null;
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   chrome.tabs.sendMessage(tabs[0].id, { type: "GET_JOB_INFO" }, (info) => {
     if (chrome.runtime.lastError || !info) {
-      document.getElementById("status").textContent = "Could not read page.";
-      return;
-    }
-    jobInfo = info;
-    const { company, role } = info;
-    if (company || role) {
-      document.getElementById("status").textContent =
-        `${role || "Unknown Role"} @ ${company || "Unknown Company"}`;
-      document.getElementById("reach-btn").disabled = false;
+      document.getElementById("status").textContent = "Could not read page — edit fields manually.";
     } else {
-      document.getElementById("status").textContent = "No job info found on this page.";
+      jobInfo = info;
+      document.getElementById("company-input").value = info.company || "";
+      document.getElementById("role-input").value = info.role || "";
+      document.getElementById("status").textContent = "Edit if needed, then send.";
     }
+    document.getElementById("reach-btn").disabled = false;
   });
 });
 
@@ -22,6 +18,17 @@ document.getElementById("reach-btn").addEventListener("click", () => {
   const btn = document.getElementById("reach-btn");
   const result = document.getElementById("result");
   const error = document.getElementById("error");
+
+  const company = document.getElementById("company-input").value.trim();
+  const role = document.getElementById("role-input").value.trim();
+  const url = jobInfo ? jobInfo.url : window.location.href;
+
+  if (!company || !role) {
+    error.textContent = "Please fill in company and role.";
+    return;
+  }
+
+  jobInfo = { ...jobInfo, company, role, url };
 
   btn.disabled = true;
   btn.textContent = "Sending...";
