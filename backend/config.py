@@ -11,6 +11,7 @@ YOUR_EMAIL = os.getenv("YOUR_EMAIL")
 YOUR_LINKEDIN = os.getenv("YOUR_LINKEDIN", "")
 YOUR_GITHUB = os.getenv("YOUR_GITHUB", "")
 TEAL_API_KEY = os.getenv("TEAL_API_KEY", "")
+ENRICHLAYER_API_KEY = os.getenv("ENRICHLAYER_API_KEY", "")
 
 def validate():
     missing = [k for k, v in {
