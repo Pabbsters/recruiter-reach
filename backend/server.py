@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
 from backend.config import validate
-from backend.scraper import scrape_recruiter
+from backend.scraper import scrape_recruiter, get_hunter_domain_info, find_email_via_hunter
 from backend.email_finder import generate_candidates
 from backend.verifier import find_best
 from backend.template import format_email
@@ -13,6 +13,12 @@ from backend import config
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 CORS(app, origins=["chrome-extension://*"])
+
+# Common recruiting inbox patterns — tried in order when no specific recruiter found
+RECRUITING_PATTERNS = [
+    "recruiting", "recruiter", "careers", "talent", "hr",
+    "hiring", "jobs", "apply", "people", "humanresources",
+]
 
 @app.route("/health")
 def health():
@@ -32,18 +38,45 @@ def reach():
     name = recruiter.get("name")
     domain = recruiter.get("domain")
 
-    candidates = []
     verified_email = None
+    candidates_tried = []
 
+    # Step 1: If we have a recruiter name, use Hunter to find their specific email
     if name:
         parts = name.split()
         if len(parts) >= 2:
-            candidates = generate_candidates(parts[0], parts[1], domain)
-            verified_email = find_best(candidates)
+            hunter_email = find_email_via_hunter(parts[0], parts[1], domain)
+            if hunter_email:
+                candidates_tried.append(hunter_email)
+                from backend.verifier import verify_email
+                if verify_email(hunter_email):
+                    verified_email = hunter_email
 
+    # Step 2: Use Hunter domain search to get known emails + pattern-based candidates
     if not verified_email:
-        verified_email = find_best([f"recruiting@{domain}", f"careers@{domain}", f"talent@{domain}"])
+        hunter_info = get_hunter_domain_info(domain)
 
+        # Try known emails from Hunter first (highest confidence)
+        known_emails = hunter_info.get("emails", [])
+        candidates_tried.extend(known_emails)
+        if known_emails:
+            verified_email = find_best(known_emails)
+
+    # Step 3: If Hunter gave us a pattern, generate pattern-based candidates for recruiter name
+    if not verified_email and name:
+        parts = name.split()
+        if len(parts) >= 2:
+            pattern_candidates = generate_candidates(parts[0], parts[1], domain)
+            candidates_tried.extend(pattern_candidates)
+            verified_email = find_best(pattern_candidates)
+
+    # Step 4: Try all common recruiting inbox patterns
+    if not verified_email:
+        recruiting_emails = [f"{p}@{domain}" for p in RECRUITING_PATTERNS]
+        candidates_tried.extend(recruiting_emails)
+        verified_email = find_best(recruiting_emails)
+
+    # Log the job regardless of whether we found an email
     log_job(company, role, url, verified_email)
 
     if not verified_email:
@@ -51,7 +84,7 @@ def reach():
             "success": False,
             "email_sent_to": None,
             "recruiter_name": name,
-            "candidates_tried": len(candidates),
+            "candidates_tried": len(candidates_tried),
             "error": "No verified email found — job logged, no email sent.",
         })
 
@@ -71,7 +104,7 @@ def reach():
         "success": sent,
         "recruiter_name": name,
         "email_sent_to": verified_email,
-        "candidates_tried": len(candidates),
+        "candidates_tried": len(candidates_tried),
     })
 
 if __name__ == "__main__":

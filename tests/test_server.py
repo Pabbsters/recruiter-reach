@@ -32,10 +32,10 @@ def test_reach_success(client):
 
 def test_reach_fallback_when_no_recruiter(client):
     with patch("backend.server.scrape_recruiter", return_value={"name": None, "domain": "company.com"}), \
+         patch("backend.server.get_hunter_domain_info", return_value={}), \
          patch("backend.server.find_best", return_value=None), \
-         patch("backend.server.format_email", return_value={"subject": "s", "body": "b"}), \
-         patch("backend.server.send_email", return_value=True), \
          patch("backend.server.log_job"):
         res = client.post("/reach", json={"company": "Company", "role": "Intern", "url": "https://x.com"})
         data = res.get_json()
-        assert "company.com" in data["email_sent_to"]
+        assert data["success"] is False
+        assert data["email_sent_to"] is None
